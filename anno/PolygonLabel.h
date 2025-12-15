@@ -37,6 +37,8 @@ public:
 
     QTransform GetTransform(bool scale, bool rotate) override;
 
+    bool CropBy(float minx, float miny, float maxx, float maxy);
+
 private:
 	bool IsNearStartPoint(const WorldInfo &) const;
 

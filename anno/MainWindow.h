@@ -47,7 +47,12 @@ public slots:
 	void OnProjectSettings();
     void UpdateApplicationTitle();
     void UpdateProjectControls();
-    void OnEvaluateInROI();    
+    void OnEvaluateInROI();
+
+    void OpenBorders();
+    void SaveBorders();
+    void Open0Map();
+    void Save0Map();
 
 private:	
 	bool CloseActiveProject();

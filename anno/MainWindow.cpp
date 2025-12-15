@@ -85,6 +85,13 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(ui.project_settings_action, &QAction::triggered, this, &MainWindow::OnProjectSettings);
     connect(ui.evaluate_in_roi_action, &QAction::triggered, this, &MainWindow::OnEvaluateInROI);
 
+    // Borders
+    connect(ui.open_country_borders_action, &QAction::triggered, this, &MainWindow::OpenBorders);
+    connect(ui.save_country_borders_action, &QAction::triggered, this, &MainWindow::SaveBorders);
+    connect(ui.crop_borders_action, &QAction::triggered, &model_, &ApplicationModel::CropBorders);
+    connect(ui.open_0_map_action, &QAction::triggered, this, &MainWindow::Open0Map);
+    connect(ui.save_0_map_action, &QAction::triggered, this, &MainWindow::Save0Map);
+
 	// files tree
     ui.files_tree->Init(&model_);
     connect(ui.files_tree, &SourcePicturesWidget::FileModelSelected, this, &MainWindow::OnImageFileChanged);

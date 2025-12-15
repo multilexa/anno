@@ -48,7 +48,7 @@
        <number>0</number>
       </property>
       <property name="orientation">
-       <enum>Qt::Horizontal</enum>
+       <enum>Qt::Orientation::Horizontal</enum>
       </property>
       <property name="opaqueResize">
        <bool>true</bool>
@@ -156,10 +156,10 @@
               </size>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Raised</enum>
+              <enum>QFrame::Shadow::Raised</enum>
              </property>
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
             </widget>
            </item>
@@ -186,7 +186,7 @@
            <item>
             <spacer name="horizontalSpacer">
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -243,7 +243,7 @@
               <number>50</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
              <property name="invertedAppearance">
               <bool>false</bool>
@@ -310,7 +310,7 @@
            <item>
             <widget class="QSplitter" name="splitter_2">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="handleWidth">
               <number>1</number>
@@ -324,10 +324,10 @@
                <bool>true</bool>
               </property>
               <property name="tabPosition">
-               <enum>QTabWidget::North</enum>
+               <enum>QTabWidget::TabPosition::North</enum>
               </property>
               <property name="tabShape">
-               <enum>QTabWidget::Rounded</enum>
+               <enum>QTabWidget::TabShape::Rounded</enum>
               </property>
               <property name="currentIndex">
                <number>0</number>
@@ -378,7 +378,7 @@
      <x>0</x>
      <y>0</y>
      <width>1127</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -417,9 +417,22 @@
     <addaction name="separator"/>
     <addaction name="action3d_View"/>
    </widget>
+   <widget class="QMenu" name="menuBorders">
+    <property name="title">
+     <string>Borders</string>
+    </property>
+    <addaction name="open_country_borders_action"/>
+    <addaction name="save_country_borders_action"/>
+    <addaction name="separator"/>
+    <addaction name="crop_borders_action"/>
+    <addaction name="separator"/>
+    <addaction name="open_0_map_action"/>
+    <addaction name="save_0_map_action"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
+   <addaction name="menuBorders"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <property name="styleSheet">
@@ -432,7 +445,7 @@
     <bool>false</bool>
    </property>
    <property name="toolButtonStyle">
-    <enum>Qt::ToolButtonIconOnly</enum>
+    <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -578,6 +591,46 @@
    </property>
    <property name="text">
     <string>Evaluate in ROI</string>
+   </property>
+  </action>
+  <action name="open_country_borders_action">
+   <property name="text">
+    <string>open country borders...</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="save_country_borders_action">
+   <property name="text">
+    <string>save country borders</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="crop_borders_action">
+   <property name="text">
+    <string>crop borders</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="open_0_map_action">
+   <property name="text">
+    <string>open 0 map...</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="save_0_map_action">
+   <property name="text">
+    <string>save 0 map</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
  </widget>

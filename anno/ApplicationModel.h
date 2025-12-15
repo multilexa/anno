@@ -78,6 +78,16 @@ public:
     /// Evaluate on the image data using remote server.
     bool Evaluate(std::shared_ptr<FileModel>, const ImageData &image, QPointF image_offset, QStringList & error);
 
+    /// Earth functions
+    void OpenBorders(QString folder);
+    void SaveBorders(QString folder, std::shared_ptr<LabelDefinition> definition);
+
+    void Open0Map(QString filename);
+    void Save0Map(QString filename);
+
+public slots:
+    void CropBorders();
+
 public slots:
 	void SetModified() { set_is_modified(true); }
     void OnFileModifiedChanged(bool value);    

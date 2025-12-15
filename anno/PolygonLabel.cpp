@@ -442,3 +442,39 @@ QTransform PolygonLabel::GetTransform(bool scale, bool rotate) {
     return QTransform().translate(pos.x(), pos.y());
 }
 
+bool PolygonLabel::CropBy(float minx, float miny, float maxx, float maxy) {
+    auto cp = compute_visualisation_data_;
+    compute_visualisation_data_ = false;
+
+    for (auto it = contours_.begin(); it != contours_.end();) {
+        auto &c = *it;
+        for (int i = 0; i < int(c->size());) {
+            auto p = c->at(i)->GetPosition();
+            if (p.x() > minx && p.x() < maxx && p.y() > miny && p.y() < maxy) {
+                DeleteHandle(c->at(i));
+                c->erase(c->begin() + i);
+            }
+            else {
+                ++i;
+            }
+        }
+        if (c->size() <= 2) {
+            for (auto h: *c) {
+                DeleteHandle(h);
+            }
+            it = contours_.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+
+    if (!contours_.size()) {
+        return false;
+    }
+
+    compute_visualisation_data_ = cp;
+    Triangulate();
+
+    return true;
+}
