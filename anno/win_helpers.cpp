@@ -2,6 +2,9 @@
 // 2020-2024 (c) urobots GmbH, https://urobots.io/en/portfolio/anno/
 
 #include "win_helpers.h"
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 #include <QtGlobal>
 #include <sstream>
 
