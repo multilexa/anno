@@ -2,6 +2,8 @@
 #include "LabelFactory.h"
 #include "LocalFilesystem.h"
 
+#define USE_CATEGORIES_FOR_COUNTRIES 1
+
 using namespace std;
 
 namespace  {
@@ -26,11 +28,22 @@ qreal Area(QVector<QPointF> points) {
     return sum > 0 ? sum : -sum;
 }
 
-const double world_imw = 3840;
-const double world_imh = 1920;
+QColor randomBrightColor()
+{
+    int hue = QRandomGenerator::global()->bounded(360);
+    int saturation = 200 + QRandomGenerator::global()->bounded(56); // 200–255
+    int value = 200 + QRandomGenerator::global()->bounded(56);       // 200–255
+
+    return QColor::fromHsv(hue, saturation, value);
 }
 
-void ApplicationModel::OpenBorders(QString folder) {
+const double world_imw = 3840;
+const double world_imh = 1920;
+
+QMap<QString, QString> global_country_names;
+}
+
+void ApplicationModel::OpenBorders(QStringList files, QString folder) {
     ClearProject();
 
     pictures_path_original_ = folder;
@@ -42,21 +55,24 @@ void ApplicationModel::OpenBorders(QString folder) {
     // Collect all countries
     QStringList countries;
 
-    QDirIterator it(folder);
-    while (it.hasNext()) {
-        QFileInfo info(it.next());
+    auto borders_def = make_shared<LabelDefinition>(LabelType::polygon);
+    CustomPropertyDefinition d;
+    d.id = QString("clockwise");
+    d.type = CustomPropertyType::p_boolean;
+    borders_def->custom_properties.push_back(d);
+    definitions.push_back(borders_def);
+
+    map<QString, shared_ptr<LabelCategory>> cats_map;
+
+    // Create category per country code
+    for (auto it: files) {
+        QFileInfo info(it);
         if (info.isFile() && info.baseName().length() >= 2) {
-            if (info.baseName() != "XA" && info.baseName() != "XB") continue;
-
-            countries << info.baseName();
-
-            auto def = make_shared<LabelDefinition>(LabelType::polygon);
-            def->set_type_name(info.baseName() + "X");
-
-            LabelDefinition::CreateCategory(def, 0, "Plus", Qt::green);
-            LabelDefinition::CreateCategory(def, 1, "Minus", Qt::blue);
-
-            definitions.push_back(def);
+            auto code = info.baseName();
+            if (cats_map.count(code) == 0) {
+                auto color = randomBrightColor();
+                cats_map[code] = LabelDefinition::CreateCategory(borders_def, cats_map.size() + 1, code, color);
+            }
         }
     }
 
@@ -69,7 +85,6 @@ void ApplicationModel::OpenBorders(QString folder) {
     set_label_definitions(std::make_shared<LabelDefinitionsTreeModel>(this, definitions));
     connect(get_label_definitions().get(), &LabelDefinitionsTreeModel::Changed, this, &ApplicationModel::SetModified);
 
-
     auto file = GetFileModel("_.png");
 
     // add cropper label
@@ -78,12 +93,16 @@ void ApplicationModel::OpenBorders(QString folder) {
     cropper_label->FromStringsList({"10 10 100 100"});
     file->labels_.push_back(cropper_label);
 
-    for (auto code: countries) {
-        auto def = get_label_definitions()->FindDefinition(code + "X");
-        auto plus_cat = def->GetCategory(0);
-        auto minus_cat = def->GetCategory(1);
+    for (auto it: files) {
+        QFileInfo info(it);
+        if (!info.isFile() || info.baseName().length() < 2) {
+            continue;
+        }
 
-        auto filename = folder + "/" + code + ".json";
+        auto code = info.baseName();
+        auto category = cats_map[code];
+
+        auto filename = it; // folder + "/" + code + ".json";
 
         QFile jsonFile(filename);
         jsonFile.open(QFile::ReadOnly);
@@ -95,7 +114,8 @@ void ApplicationModel::OpenBorders(QString folder) {
             continue;
         }
 
-        def->set_description(document.object()["name"].toString());
+        global_country_names[code] = document.object()["name"].toString();
+
         auto borders = document.object()["borders"].toArray();
 
         for (auto border : borders) {
@@ -111,13 +131,15 @@ void ApplicationModel::OpenBorders(QString folder) {
             }
 
             auto label = LabelFactory::CreateLabel(LabelType::polygon);
-            label->SetCategory(!IsClockwise(points) ? plus_cat : minus_cat);
+
+            label->SetCategory(category);
+            label->GetCustomProperties().insert("clockwise", IsClockwise(points));
 
             QStringList points_sl;
             for (auto p: points) {
                 points_sl << QString("%0 %1")
-                .arg(QString::number(p.x(), 'g', 12))
-                    .arg(QString::number(p.y(), 'g', 12));
+                .arg(QString::number(p.x(), 'g', 14))
+                    .arg(QString::number(p.y(), 'g', 14));
             }
 
             label->FromStringsList(QStringList() << points_sl.join(" "));
@@ -126,15 +148,17 @@ void ApplicationModel::OpenBorders(QString folder) {
     }
 }
 
-void ApplicationModel::SaveBorders(QString folder, std::shared_ptr<LabelDefinition> def) {
+void ApplicationModel::SaveBorders(QString filename, std::shared_ptr<LabelCategory> category) {
     QJsonObject json;
-    json.insert("name", def->get_description());
+
+    auto code = category->get_name();
+    json.insert("name", global_country_names[code]);
 
     auto file = GetFileModel("_.png");
 
     QJsonArray borders;
     for (auto label: file->labels_) {
-        if (label->GetDefinition() != def) {
+        if (label->GetCategory() != category) {
             continue;
         }
 
@@ -152,13 +176,22 @@ void ApplicationModel::SaveBorders(QString folder, std::shared_ptr<LabelDefiniti
             point << _x << _y;
             points << point;
         }
+
+        if (label->GetCustomProperties()["clockwise"].toBool()) {
+            QJsonArray reversed;
+            for (int i = points.size() - 1; i >= 0; --i) {
+                reversed.append(points.at(i));
+            }
+            points = reversed;
+        }
+
         QJsonObject border;
         border.insert("points", points);
         borders << border;
     }
     json.insert("borders", borders);
 
-    QFile jsonFile(folder + "/" + def->get_type_name() + ".json");
+    QFile jsonFile(filename);
     if (jsonFile.open(QFile::WriteOnly)) {
         jsonFile.write(QJsonDocument(json).toJson());
     }
@@ -205,17 +238,6 @@ void ApplicationModel::CropBorders() {
     }
 }
 
-QColor randomBrightColor()
-{
-    int hue = QRandomGenerator::global()->bounded(360);
-    int saturation = 200 + QRandomGenerator::global()->bounded(56); // 200–255
-    int value = 200 + QRandomGenerator::global()->bounded(56);       // 200–255
-
-    return QColor::fromHsv(hue, saturation, value);
-}
-
-#define USE_CATEGORIES_FOR_COUNTRIES 0
-
 void ApplicationModel::Open0Map(QString filename) {
     ClearProject();
 
@@ -236,7 +258,7 @@ void ApplicationModel::Open0Map(QString filename) {
         return;
     }
 
-#if USE_CATEGORIES_FOR_COUNTRIES
+#if !USE_CATEGORIES_FOR_COUNTRIES
     // Create label per country
     map<QString, shared_ptr<LabelDefinition>> defs_map;
     for (auto border: document.array()) {
@@ -287,7 +309,7 @@ void ApplicationModel::Open0Map(QString filename) {
     for (auto border: document.array()) {
         auto code = border.toObject()["code"].toString();
 
-#if USE_CATEGORIES_FOR_COUNTRIES
+#if !USE_CATEGORIES_FOR_COUNTRIES
         if (!defs_map.count(code)) {
             continue;
         }
@@ -356,7 +378,7 @@ void ApplicationModel::Save0Map(QString filename) {
 
         QJsonObject border;
         border.insert("points", points);
-#if USE_CATEGORIES_FOR_COUNTRIES
+#if !USE_CATEGORIES_FOR_COUNTRIES
         border.insert("code", label->GetDefinition()->get_type_name());
 #else
         border.insert("code", label->GetCategory()->get_name());

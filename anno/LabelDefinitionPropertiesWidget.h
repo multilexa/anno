@@ -11,6 +11,9 @@ public:
     LabelDefinitionPropertiesWidget(QWidget *parent=nullptr);
     ~LabelDefinitionPropertiesWidget();
 
+    std::shared_ptr<LabelDefinition> GetSelectedDefinition() { return definition_; }
+    std::shared_ptr<LabelCategory> GetSelectedCategory() { return category_; }
+
 public slots:
     void Select(std::shared_ptr<LabelDefinition>, std::shared_ptr<LabelCategory>);
 

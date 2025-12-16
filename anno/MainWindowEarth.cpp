@@ -1,4 +1,6 @@
 #include "MainWindow.h"
+#include <QFileInfo>
+#include "messagebox.h"
 
 using namespace std;
 using namespace urobots::qt_helpers;
@@ -14,29 +16,36 @@ void MainWindow::OpenBorders() {
     // select folder with files
     auto files_folder = QSettings().value(BORDERS_FOLDER).toString();
     QFileDialog dialog(this, tr("Select folder with images"), files_folder);
-    dialog.setFileMode(QFileDialog::Directory);
+    dialog.setFileMode(QFileDialog::ExistingFiles);
+
     //dialog.setOption(QFileDialog::DontUseNativeDialog);
     if (dialog.exec() != QDialog::Accepted) {
         return;
     }
 
-    files_folder = dialog.selectedFiles().first();
+    auto selected_files = dialog.selectedFiles();
+
+    files_folder = QFileInfo(selected_files.first()).absolutePath();
     QSettings().setValue(BORDERS_FOLDER, files_folder);
 
-    model_.OpenBorders(files_folder);
+    model_.OpenBorders(selected_files, files_folder);
 }
 
 void MainWindow::SaveBorders() {
-    /*
-    auto def = ui.definition_editor->GetDefinition();
-    if (!def) {
-        messagebox::Critical("Please select marker type");
+    auto category = ui.definition_editor->GetSelectedCategory();
+    if (!category) {
+        messagebox::Critical("Please select country category");
         return;
     }
 
-    auto files_folder = QSettings().value(TB_1_IMAGE_FOLDER).toString();
-    model_.SaveBorders(files_folder, def);
-   */
+    auto dir_value = QSettings().value(BORDERS_FOLDER).toString();
+    auto filename = QFileDialog::getSaveFileName(
+        this,
+        tr("Save border"),
+        dir_value,
+        tr("All files (*.*);;JSON files (*.json)"));
+
+    model_.SaveBorders(filename, category);
 }
 
 void MainWindow::Open0Map() {

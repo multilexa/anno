@@ -79,8 +79,8 @@ public:
     bool Evaluate(std::shared_ptr<FileModel>, const ImageData &image, QPointF image_offset, QStringList & error);
 
     /// Earth functions
-    void OpenBorders(QString folder);
-    void SaveBorders(QString folder, std::shared_ptr<LabelDefinition> definition);
+    void OpenBorders(QStringList files, QString folder);
+    void SaveBorders(QString folder, std::shared_ptr<LabelCategory> definition);
 
     void Open0Map(QString filename);
     void Save0Map(QString filename);
