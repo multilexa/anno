@@ -370,10 +370,10 @@ void ApplicationModel::Save0Map(QString filename) {
         border.insert("code", label->GetCategory()->get_name());
 
         qreal area = Area(pointsf);
-        if (!IsClockwise(pointsf)) {
+        if (label->GetCustomProperties()["clockwise"].toBool()) {
             area *= -1.0;
         }
-        border.insert("area", area);
+        border.insert("area", area * 100);
 
         qreal minx = pointsf[0].x();
         qreal miny = pointsf[0].y();
