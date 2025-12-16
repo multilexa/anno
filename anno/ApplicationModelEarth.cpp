@@ -2,8 +2,6 @@
 #include "LabelFactory.h"
 #include "LocalFilesystem.h"
 
-#define USE_CATEGORIES_FOR_COUNTRIES 1
-
 using namespace std;
 
 namespace  {
@@ -258,21 +256,11 @@ void ApplicationModel::Open0Map(QString filename) {
         return;
     }
 
-#if !USE_CATEGORIES_FOR_COUNTRIES
-    // Create label per country
-    map<QString, shared_ptr<LabelDefinition>> defs_map;
-    for (auto border: document.array()) {
-        auto code = border.toObject()["code"].toString();
-        if (defs_map.count(code) == 0) {
-            auto def = make_shared<LabelDefinition>(LabelType::polygon);
-            def->set_type_name(code);
-            LabelDefinition::CreateCategory(def, 0, "", Qt::green);
-            definitions.push_back(def);
-            defs_map[code] = def;
-        }
-    }
-#else
     auto borders_def = make_shared<LabelDefinition>(LabelType::polygon);
+    CustomPropertyDefinition d;
+    d.id = QString("clockwise");
+    d.type = CustomPropertyType::p_boolean;
+    borders_def->custom_properties.push_back(d);
     definitions.push_back(borders_def);
     map<QString, shared_ptr<LabelCategory>> cats_map;
 
@@ -286,7 +274,6 @@ void ApplicationModel::Open0Map(QString filename) {
             cats_map[code] = LabelDefinition::CreateCategory(borders_def, cats_map.size() + 1, code, randomBrightColor());
         }
     }
-#endif
 
     // Add cropper definition
     auto cropper = make_shared<LabelDefinition>(LabelType::rect);
@@ -309,20 +296,13 @@ void ApplicationModel::Open0Map(QString filename) {
     for (auto border: document.array()) {
         auto code = border.toObject()["code"].toString();
 
-#if !USE_CATEGORIES_FOR_COUNTRIES
-        if (!defs_map.count(code)) {
-            continue;
-        }
-        auto def = defs_map[code];
-        int category = 0;
-#else
         if (!cats_map.count(code)) {
             continue;
         }
 
         auto def = borders_def;
         int category = cats_map[code]->get_value();
-#endif
+
         auto jpoints = border.toObject()["points"].toArray();
         QVector<QPointF> points;
         for (auto jp : jpoints) {
@@ -336,6 +316,7 @@ void ApplicationModel::Open0Map(QString filename) {
 
         auto label = LabelFactory::CreateLabel(LabelType::polygon);
         label->SetCategory(def->GetCategory(category));
+        label->GetCustomProperties().insert("clockwise", IsClockwise(points));
 
         QStringList points_sl;
         for (auto p: points) {
@@ -376,13 +357,17 @@ void ApplicationModel::Save0Map(QString filename) {
             pointsf.push_back(QPointF(_x, _y));
         }
 
+        if (label->GetCustomProperties()["clockwise"].toBool()) {
+            QJsonArray reversed;
+            for (int i = points.size() - 1; i >= 0; --i) {
+                reversed.append(points.at(i));
+            }
+            points = reversed;
+        }
+
         QJsonObject border;
         border.insert("points", points);
-#if !USE_CATEGORIES_FOR_COUNTRIES
-        border.insert("code", label->GetDefinition()->get_type_name());
-#else
         border.insert("code", label->GetCategory()->get_name());
-#endif
 
         qreal area = Area(pointsf);
         if (!IsClockwise(pointsf)) {
@@ -413,12 +398,8 @@ void ApplicationModel::Save0Map(QString filename) {
 
     QFile jsonFile(filename);
     if (jsonFile.open(QFile::WriteOnly)) {
-#if true
-        // Compact version
-        jsonFile.write(QJsonDocument(borders).toJson(QJsonDocument::Compact));
-#else
         // Pretty format, for readability
+        // We do not care about filesize, it will be converted to bin file anyway
         jsonFile.write(QJsonDocument(borders).toJson());
-#endif
     }
 }
