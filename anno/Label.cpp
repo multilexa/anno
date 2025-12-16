@@ -65,7 +65,10 @@ void Label::DeleteHandles() {
 QString Label::ToString(const std::vector<std::shared_ptr<LabelHandle>> & handles) {
 	QStringList values;
 	for (auto h : handles) {
-		values << QString("%0 %1").arg(h->GetPosition().x()).arg(h->GetPosition().y());
+        auto p = h->GetPosition();
+        values << QString("%0 %1")
+            .arg(QString::number(p.x(), 'g', 14))
+            .arg(QString::number(p.y(), 'g', 14));
 	}
 	return values.join(' ');
 }
@@ -73,7 +76,7 @@ QString Label::ToString(const std::vector<std::shared_ptr<LabelHandle>> & handle
 void Label::FromString(const QString & string, std::vector<std::shared_ptr<LabelHandle>>& handles) {
 	QTextStream stream(&(QString&)string);
 	while (!stream.atEnd()) {
-		float x, y;
+        qreal x, y;
 		stream >> x >> y;
 
 		auto h = make_shared<LabelHandle>(QPointF(x, y), this);

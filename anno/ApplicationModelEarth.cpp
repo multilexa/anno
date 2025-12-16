@@ -15,12 +15,12 @@ bool IsClockwise(QVector<QPointF> points) {
     return sum > 0;
 }
 
-float Area(QVector<QPointF> points) {
-    float sum = 0;
+qreal Area(QVector<QPointF> points) {
+    qreal sum = 0;
     for (int i = 0; i < points.size(); ++i) {
         auto p1 = points[i];
         auto p2 = (i < points.size() - 1) ? points[i + 1] : points[0];
-        sum += p1.x() * p2.y() - p1.y() + p2.y();
+        sum += p1.x() * p2.y() - p1.y() * p2.x();
     }
     sum *= 0.5;
     return sum > 0 ? sum : -sum;
@@ -142,11 +142,11 @@ void ApplicationModel::SaveBorders(QString folder, std::shared_ptr<LabelDefiniti
         auto text = label->ToStringsList()[0];
         QTextStream stream(&(QString&)text);
         while (!stream.atEnd()) {
-            float x, y;
+            qreal x, y;
             stream >> x >> y;
 
-            float _x = x * 360.0 / world_imw - 180.0;
-            float _y = (world_imh - y) * 180.0 / world_imh - 90.0;
+            qreal _x = x * 360.0 / world_imw - 180.0;
+            qreal _y = (world_imh - y) * 180.0 / world_imh - 90.0;
 
             QJsonArray point;
             point << _x << _y;
@@ -181,7 +181,7 @@ void ApplicationModel::CropBorders() {
 
     auto text = cropper_label->ToStringsList()[0];
     QTextStream stream(&(QString&)text);
-    float minx, miny, maxx, maxy;
+    qreal minx, miny, maxx, maxy;
     stream >> minx >> miny >> maxx >> maxy;
     if (minx > maxx) std::swap(minx, maxx);
     if (miny > maxy) std::swap(miny, maxy);
@@ -228,7 +228,8 @@ void ApplicationModel::Open0Map(QString filename) {
     map<QString, shared_ptr<LabelDefinition>> defs_map;
     for (auto border: document.array()) {
         auto code = border.toObject()["code"].toString();
-        //if (code != "XA" && code != "XB") continue;
+
+        //if (code != "CN") continue;
 
         if (defs_map.count(code) == 0) {
             auto def = make_shared<LabelDefinition>(LabelType::polygon);
@@ -281,8 +282,8 @@ void ApplicationModel::Open0Map(QString filename) {
         QStringList points_sl;
         for (auto p: points) {
             points_sl << QString("%0 %1")
-            .arg(QString::number(p.x(), 'g', 12))
-                .arg(QString::number(p.y(), 'g', 12));
+            .arg(QString::number(p.x(), 'g', 14))
+                .arg(QString::number(p.y(), 'g', 14));
         }
 
         label->FromStringsList(QStringList() << points_sl.join(" "));
@@ -304,11 +305,11 @@ void ApplicationModel::Save0Map(QString filename) {
         auto text = label->ToStringsList()[0];
         QTextStream stream(&(QString&)text);
         while (!stream.atEnd()) {
-            float x, y;
+            qreal x, y;
             stream >> x >> y;
 
-            float _x = x * 360.0 / world_imw - 180.0;
-            float _y = (world_imh - y) * 180.0 / world_imh - 90.0;
+            qreal _x = x * 360.0 / world_imw - 180.0;
+            qreal _y = (world_imh - y) * 180.0 / world_imh - 90.0;
 
             QJsonArray point;
             point << _x << _y;
@@ -321,21 +322,21 @@ void ApplicationModel::Save0Map(QString filename) {
         border.insert("points", points);
         border.insert("code", label->GetDefinition()->get_type_name());
 
-        float area = Area(pointsf);
+        qreal area = Area(pointsf);
         if (!IsClockwise(pointsf)) {
             area *= -1.0;
         }
         border.insert("area", area);
 
-        float minx = pointsf[0].x();
-        float miny = pointsf[0].y();
-        float maxx = pointsf[0].x();
-        float maxy = pointsf[0].y();
+        qreal minx = pointsf[0].x();
+        qreal miny = pointsf[0].y();
+        qreal maxx = pointsf[0].x();
+        qreal maxy = pointsf[0].y();
         for (auto p: pointsf) {
-            minx = std::min<float>(minx, p.x());
-            miny = std::min<float>(miny, p.y());
-            maxx = std::max<float>(maxx, p.x());
-            maxy = std::max<float>(maxy, p.y());
+            minx = std::min<qreal>(minx, p.x());
+            miny = std::min<qreal>(miny, p.y());
+            maxx = std::max<qreal>(maxx, p.x());
+            maxy = std::max<qreal>(maxy, p.y());
         }
 
         QJsonArray min_point;
@@ -350,6 +351,6 @@ void ApplicationModel::Save0Map(QString filename) {
 
     QFile jsonFile(filename);
     if (jsonFile.open(QFile::WriteOnly)) {
-        jsonFile.write(QJsonDocument(borders).toJson());
+        jsonFile.write(QJsonDocument(borders).toJson(QJsonDocument::Compact));
     }
 }
