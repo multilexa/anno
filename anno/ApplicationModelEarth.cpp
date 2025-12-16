@@ -205,6 +205,17 @@ void ApplicationModel::CropBorders() {
     }
 }
 
+QColor randomBrightColor()
+{
+    int hue = QRandomGenerator::global()->bounded(360);
+    int saturation = 200 + QRandomGenerator::global()->bounded(56); // 200–255
+    int value = 200 + QRandomGenerator::global()->bounded(56);       // 200–255
+
+    return QColor::fromHsv(hue, saturation, value);
+}
+
+#define USE_CATEGORIES_FOR_COUNTRIES 0
+
 void ApplicationModel::Open0Map(QString filename) {
     ClearProject();
 
@@ -225,12 +236,11 @@ void ApplicationModel::Open0Map(QString filename) {
         return;
     }
 
+#if USE_CATEGORIES_FOR_COUNTRIES
+    // Create label per country
     map<QString, shared_ptr<LabelDefinition>> defs_map;
     for (auto border: document.array()) {
         auto code = border.toObject()["code"].toString();
-
-        //if (code != "CN") continue;
-
         if (defs_map.count(code) == 0) {
             auto def = make_shared<LabelDefinition>(LabelType::polygon);
             def->set_type_name(code);
@@ -239,6 +249,22 @@ void ApplicationModel::Open0Map(QString filename) {
             defs_map[code] = def;
         }
     }
+#else
+    auto borders_def = make_shared<LabelDefinition>(LabelType::polygon);
+    definitions.push_back(borders_def);
+    map<QString, shared_ptr<LabelCategory>> cats_map;
+
+    // Add Taiwan (hotfix)
+    cats_map["TW"] = LabelDefinition::CreateCategory(borders_def, 1, "TW", randomBrightColor());
+
+    // Create category per country code
+    for (auto border: document.array()) {
+        auto code = border.toObject()["code"].toString();
+        if (cats_map.count(code) == 0) {
+            cats_map[code] = LabelDefinition::CreateCategory(borders_def, cats_map.size() + 1, code, randomBrightColor());
+        }
+    }
+#endif
 
     // Add cropper definition
     auto cropper = make_shared<LabelDefinition>(LabelType::rect);
@@ -260,11 +286,21 @@ void ApplicationModel::Open0Map(QString filename) {
     // add borders
     for (auto border: document.array()) {
         auto code = border.toObject()["code"].toString();
+
+#if USE_CATEGORIES_FOR_COUNTRIES
         if (!defs_map.count(code)) {
             continue;
         }
         auto def = defs_map[code];
+        int category = 0;
+#else
+        if (!cats_map.count(code)) {
+            continue;
+        }
 
+        auto def = borders_def;
+        int category = cats_map[code]->get_value();
+#endif
         auto jpoints = border.toObject()["points"].toArray();
         QVector<QPointF> points;
         for (auto jp : jpoints) {
@@ -277,7 +313,7 @@ void ApplicationModel::Open0Map(QString filename) {
         }
 
         auto label = LabelFactory::CreateLabel(LabelType::polygon);
-        label->SetCategory(def->GetCategory(0));
+        label->SetCategory(def->GetCategory(category));
 
         QStringList points_sl;
         for (auto p: points) {
@@ -320,7 +356,11 @@ void ApplicationModel::Save0Map(QString filename) {
 
         QJsonObject border;
         border.insert("points", points);
+#if USE_CATEGORIES_FOR_COUNTRIES
         border.insert("code", label->GetDefinition()->get_type_name());
+#else
+        border.insert("code", label->GetCategory()->get_name());
+#endif
 
         qreal area = Area(pointsf);
         if (!IsClockwise(pointsf)) {
@@ -351,6 +391,12 @@ void ApplicationModel::Save0Map(QString filename) {
 
     QFile jsonFile(filename);
     if (jsonFile.open(QFile::WriteOnly)) {
+#if true
+        // Compact version
         jsonFile.write(QJsonDocument(borders).toJson(QJsonDocument::Compact));
+#else
+        // Pretty format, for readability
+        jsonFile.write(QJsonDocument(borders).toJson());
+#endif
     }
 }
