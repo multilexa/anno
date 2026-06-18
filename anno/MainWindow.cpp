@@ -91,6 +91,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui.crop_borders_action, &QAction::triggered, &model_, &ApplicationModel::CropBorders);
     connect(ui.open_0_map_action, &QAction::triggered, this, &MainWindow::Open0Map);
     connect(ui.save_0_map_action, &QAction::triggered, this, &MainWindow::Save0Map);
+    connect(ui.remove_all_labels_except_X_action, &QAction::triggered, this, &MainWindow::RemoveAllLabelsExceptX);
 
 	// files tree
     ui.files_tree->Init(&model_);

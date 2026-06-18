@@ -53,6 +53,7 @@ public slots:
     void SaveBorders();
     void Open0Map();
     void Save0Map();
+    void RemoveAllLabelsExceptX();
 
 private:	
 	bool CloseActiveProject();

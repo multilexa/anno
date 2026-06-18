@@ -77,3 +77,15 @@ void MainWindow::Save0Map() {
     QSettings().setValue(MAP_0_FOLDER, QFileInfo(filename).absolutePath());
     model_.Save0Map(filename);
 }
+
+void MainWindow::RemoveAllLabelsExceptX() {
+    for (auto i: model_.get_label_definitions()->GetDefinitions()) {
+        std::vector<std::shared_ptr<LabelCategory>> categories = i->categories;
+        for (auto j: categories) {
+            if (!j->get_name().startsWith("X")) {
+                model_.Delete(j, false);
+            }
+        }
+    }
+}
+

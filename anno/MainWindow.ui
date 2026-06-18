@@ -428,6 +428,8 @@
     <addaction name="separator"/>
     <addaction name="open_0_map_action"/>
     <addaction name="save_0_map_action"/>
+    <addaction name="separator"/>
+    <addaction name="remove_all_labels_except_X_action"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
@@ -595,7 +597,7 @@
   </action>
   <action name="open_country_borders_action">
    <property name="text">
-    <string>open country borders...</string>
+    <string>Open country borders...</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
@@ -603,7 +605,7 @@
   </action>
   <action name="save_country_borders_action">
    <property name="text">
-    <string>save country borders</string>
+    <string>Save country borders</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
@@ -611,7 +613,7 @@
   </action>
   <action name="crop_borders_action">
    <property name="text">
-    <string>crop borders</string>
+    <string>Crop borders</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
@@ -619,7 +621,7 @@
   </action>
   <action name="open_0_map_action">
    <property name="text">
-    <string>open 0 map...</string>
+    <string>Open 0 map...</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
@@ -627,7 +629,15 @@
   </action>
   <action name="save_0_map_action">
    <property name="text">
-    <string>save 0 map</string>
+    <string>Save 0 map</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="remove_all_labels_except_X_action">
+   <property name="text">
+    <string>Remove all labels except X?</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>
